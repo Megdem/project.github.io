@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Player Information</title>
+  <style>
+    .main_form {
+  background-color: #ffffff;
+  width: 500px;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.5);
+  margin: 20px auto;
+}
+
+label {
+  display: inline-block;
+  width: 100px;
+  margin-bottom: 10px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="date"],
+select {
+  padding: 8px;
+  border-radius: 5px;
+  border: solid 1px black;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="date"]:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.5);
+}
+
+input[type="number"] {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f2f2f2;
+}
+
+button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+}
+
+
+button:disabled{
+  color: gray;
+  cursor: auto;
+  background-color: #ddd;
+  background: #ddd;
+}
+
+
+button:hover {
+  background-color: #3e8e41;
+}
+
+
+#play-area {
+  background-color: #ffffff;
+  width: 90%;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+  min-height: 100px;
+}
+
+#answer-input {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* #accept-button,
+#next-button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 5px;
+  width: 45%;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+} */
+
+/* #accept-button:hover,
+#next-button:hover {
+  background-color: #3e8e41;
+} */
+
+/* #endBtn {
+  background-color: #f44336;
+  border: none;
+  color: white;
+  padding: 10px;
+  text-align: center;
+} */
+ 
+
+  </style>
+ 
+</head>
+<body>
+	<form class="main_form">
+		<label for="fname">First Name:</label>
+		<input type="text" id="fname" name="fname" minlength="3" required><br><br>
+
+		<label for="lname">Last Name:</label>
+		<input type="text" id="lname" name="lname" minlength="3" required><br><br>
+
+		<label for="dob">Date of Birth:</label>
+		<input type="date" id="dob" name="dob" required><br><br>
+
+		<label for="age">Age:</label>
+		<input type="number" id="age" name="age" min="8" max="25" readonly required><br><br>
+
+		<label for="gender">Gender:</label>
+		<select id="gender" name="gender" required>
+			<option value="">Select</option>
+			<option value="male">Male</option>
+			<option value="female">Female</option>
+			<option value="other">Other</option>
+		</select><br><br>
+
+		<label for="email">Email Address:</label>
+		<input type="email" id="email" name="email" required pattern=".+@gmail\.com$"><br><br>
+
+    <button type="button" id="register-btn" onclick="Register()">Register</button>
+    
+    <button id="start-btn" type="button" onclick="PlayGame()" disabled>Start</button>
+    <div id="play-area" disabled></div>
+
+    <input id="answer-input" type="text" placeholder="Enter your answer" disabled>
+    <button id="accept-button" type="button" onclick="CheckAnswer()" disabled>Accept </button>
+    <button id="next-button" type="button" onclick="PlayGame()" disabled>Next</button>
+    <button type="button" onclick="findPercentageScore();" id="endBtn" disabled>End</button>
+
+    <textarea id="showpercentage" rows="10" cols="50"></textarea>
+    <textarea id="showallplayers" rows="10" cols="50"></textarea>
+
+    <button type="button" id="percentage-button" onclick="findPercentageScore()" disabled>Calculate Percentage Score</button>
+
+	</form>
+
+    <!-- add two canvas elements to the HTML code with unique id attributes -->
+<canvas id="genderChart"></canvas>
+<canvas id="percentageChart"></canvas>
+<script>
+  // Calculate age from date of birth
+	document.getElementById("dob").addEventListener("change", function() {
+		var dob = new Date(this.value);
+		var today = new Date();
+		var age = today.getFullYear() - dob.getFullYear();
+		if (today.getMonth() < dob.getMonth() || (today.getMonth() == dob.getMonth() && today.getDate() < dob.getDate())) {
+			age--;
+		}
+		document.getElementById("age").value = age;
+	});
+
+
+  // Define global array to hold player data
+  var PlayersData = [];
+  var originalWord="";
+
+  function Register() {
+    // Get form fields by ID
+    var fname = document.getElementById("fname");
+    var lname = document.getElementById("lname");
+    var dob = document.getElementById("dob");
+    var age = document.getElementById("age");
+    var gender = document.getElementById("gender");
+    var email = document.getElementById("email");
+
+    // Validate fields
+    if (fname.value.length < 3) {
+      alert("First name must be at least 3 characters long.");
+      fname.focus();
+      return false;
+    }
+    if (lname.value.length < 3) {
+      alert("Last name must be at least 3 characters long.");
+      lname.focus();
+      return false;
+    }
+    if (dob.value == "") {
+      alert("Please enter your date of birth.");
+      dob.focus();
+      return false;
+    }
+    if (age.value < 8 || age.value > 26) {
+      alert("Age must be between 8 and 12 (inclusive).");
+      dob.focus();
+      return false;
+    }
+    if (gender.value == "") {
+      alert("Please select your gender.");
+      gender.focus();
+      return false;
+    }
+    if (!email.value.endsWith("@gmail.com")) {
+      alert("Please enter a valid Gmail address.");
+      email.focus();
+      return false;
+    }
+
+    // Append validated data to global array
+    PlayersData.push({
+      firstname: fname.value,
+      lastname: lname.value,
+      dob: dob.value,
+      age: age.value,
+      gender: gender.value,
+      email: email.value,
+      results: []
+    });
+
+
+    alert("Registration successful!");
+
+    // Disable all form fields after registration
+    fname.disabled = true;
+    lname.disabled = true;
+    dob.disabled = true;
+    age.disabled = true;
+    gender.disabled = true;
+    email.disabled = true;
+
+    document.getElementById("register-btn").disabled = true;
+
+    // Enable End and Start buttons
+    document.getElementById("endBtn").disabled = false;
+    document.getElementById("start-btn").disabled = false;
+    document.getElementById("percentage-button").disabled = false;
+    
+
+    return true;
+  }
+
+
+  function generateScrambledWord() {
+  // Define an array of words to choose from
+  const words = ["apple", "eschew","Abort", "Cache", "grape", "lemon","globle","Block","laptop","desktop","tablet","Basic","Click","Virus", "Stats", "Proxy", "Pixel","Patch","Modem", "water","Micro","clerisy","Media","Macro","java","cyber","securtiy","Logon","Login","Logic", "escape", "parlay", "Input","Image","Frame","Forum","Excel"];
+
+  // Choose a random word from the array
+  const randomWord = words[Math.floor(Math.random() * words.length)];
+
+  // Scramble the letters of the word
+  const scrambledWord = randomWord.split("").sort(() => 0.5 - Math.random()).join("");
+
+  // Save the original word to a separate variable
+  originalWord = randomWord;
+
+  // Return an object containing both the scrambled and original words
+  return scrambledWord;
+}
+
+  function PlayGame() {
+
+      // Call the function to generate a scrambled word
+    const scrambledWord = generateScrambledWord();
+
+    // Display the random characters in the Play area
+    const playArea = document.getElementById('play-area');
+    playArea.innerText = scrambledWord;
+
+    document.getElementById("answer-input").disabled = false;
+    document.getElementById("accept-button").disabled = false;
+    document.getElementById("next-button").disabled = false;
+    document.getElementById("percentage-button").disabled = false;
+  
+  }
+
+  function CheckAnswer() {
+    // get the original characters from the Play area
+    //let originalChars = document.getElementById("play-area").textContent;
+
+    // get the player's answer from the answer input field
+    let playerAnswer = document.getElementById("answer-input").value;
+
+    // validate the player's answer
+    if (playerAnswer === "") {
+      alert("Please enter your answer!");
+      return;
+    }
+
+    // compare the player's answer with the original characters
+    let isCorrect = false;
+    if (playerAnswer.toLowerCase() === originalWord.toLowerCase()) {
+      isCorrect = true;
+      alert("Awesome!! The word is correct.");
+    } else {
+      alert("Sorry, the word is incorrect. Please try again.");
+    }
+
+
+
+    var fname = document.getElementById("fname");
+    //Find index of specific object using findIndex method.    
+    objIndex = PlayersData.findIndex((obj => obj.firstname == fname.value));
+
+    // Create an object with the original characters, player's answer, and correct/incorrect flag
+    let result = {
+      originalChars: originalWord,
+      playerAnswer: playerAnswer,
+      isCorrect: isCorrect
+    };
+
+
+    PlayersData[objIndex].results.push(result);
+    
+    // Clear answer input and enable/disable buttons
+    document.getElementById("accept-button").disabled = true;
+    document.getElementById("next-button").disabled = false;
+    
+    // Update showallplayers textarea
+    showAll();
+  }
+
+  function findPercentageScore() {
+    // Clear the textarea
+    document.getElementById("showpercentage").value = "";
+
+    var fname = document.getElementById("fname");
+    //Find index of specific object using findIndex method.    
+    objIndex = PlayersData.findIndex((obj => obj.firstname == fname.value));
+
+
+    // Get total number of questions and correct answers
+    var totalQuestions = PlayersData[objIndex].results.length;
+    var correctAnswers = 0;
+    for (var i = 0; i < totalQuestions; i++) {
+      if (PlayersData[objIndex].results[i].isCorrect == true) {
+        correctAnswers++;
+      }
+    }
+
+    // Calculate the percentage score
+    var percentageScore = (correctAnswers / totalQuestions) * 100;
+
+    // Get the player's name
+    var playerName = PlayersData[PlayersData.length - 1].firstname + " " + PlayersData[PlayersData.length - 1].lastname;
+
+    // Get the current date
+    var currentDate = new Date();
+
+    // Format the date as DD/MM/YYYY
+    var formattedDate = currentDate.getDate() + "/" + (currentDate.getMonth() + 1) + "/" + currentDate.getFullYear();
+
+    // Construct the message to be displayed in the textarea
+    var message = playerName + ", " + formattedDate + "\n" +
+      "Total questions: " + totalQuestions + "\n" +
+      "Correct answers: " + correctAnswers + "\n" +
+      "Percentage score: " + percentageScore.toFixed(2) + "%";
+
+    // Display the message in the textarea
+    document.getElementById("showpercentage").value = message;
+
+    endGame();
+  }
+
+
+  function clearForm() {
+    var fname = document.getElementById("fname");
+    var lname = document.getElementById("lname");
+    var dob = document.getElementById("dob");
+    var age = document.getElementById("age");
+    var gender = document.getElementById("gender");
+    var email = document.getElementById("email");
+    var answerinput= document.getElementById("answer-input");
+
+    fname.value = "";
+    lname.value = "";
+    dob.value = "";
+    age.value = "";
+    gender.value = "";
+    email.value = "";
+    answerinput.value = "";
+    
+
+    // Disable all form fields after registration
+    fname.disabled = false;
+    lname.disabled = false;
+    dob.disabled = false;
+    age.disabled = false;
+    gender.disabled = false;
+    email.disabled = false;
+    answerinput.disabled= true;
+  }
+
+  function disableButtons() {
+    document.getElementById("start-btn").disabled = true;
+    document.getElementById("accept-button").disabled = true;
+    document.getElementById("next-button").disabled = true;
+    document.getElementById("endBtn").disabled = true;
+    document.getElementById("percentage-button").disabled = true;
+  }
+
+  function enableRegisterButton() {
+    document.getElementById("register-btn").disabled = false;
+  }
+
+  function enableButtons() {
+    document.getElementById("start-Btn").disabled = false;
+    document.getElementById("endBtn").disabled = false;
+  }
+
+  function endGame() {
+    disableButtons();
+    enableRegisterButton();
+    clearForm();
+  }
+
+
+  function caculateTotalQuestions(){
+      let totalQuestions =0;
+      for(let i=0;i<PlayersData.length; i++){
+        totalQuestions += PlayersData[i].results.length;
+      }
+      return totalQuestions;
+  }
+
+  function showAll() {
+    let output = "";
+  for (let i = 0; i < PlayersData.length; i++) {
+    let player = PlayersData[i];
+    output += "Name: " + player.firstname + " " + player.lastname + "\n";
+    output += "Age: " + player.age + "\n";
+    output += "Gender: " + player.gender + "\n";
+    output += "Result:\n" + showAnswers(player) + "\n";
+  }
+  // Calculate overall score for all players
+  let totalQuestions = caculateTotalQuestions();
+  let totalCorrect = 0;
+  for (let i = 0; i < PlayersData.length; i++) {
+    totalCorrect += calculateScore(PlayersData[i]);
+  }
+  let overallScore = Math.round((totalCorrect / totalQuestions) * 100);
+
+  output += "Total Players: " + PlayersData.length + "\n";
+  output += "Total Questions: " + totalQuestions + "\n";
+  output += "Total Correct: " + totalCorrect + "\n";
+  output += "Overall Score: " + overallScore + "%\n";
+  
+  document.getElementById("showallplayers").value = output;
+  }
+
+  function showAnswers(player) {
+  let result = "";
+  for (let i = 0; i < player.results.length; i++) {
+    result += "Question #"+(i+1)+": "+player.results[i].originalChars + ", Answer: " + player.results[i].playerAnswer + ", Staus: "+player.results[i].isCorrect+"\n";
+  }
+
+  if (player.results.length > 0) {
+    var percentageScore = (calculateScore(player) / player.results.length) * 100;
+    result += "Score: " + percentageScore.toFixed(2) + "%\n";
+  }
+  return result;
+}
+
+
+
+function calculateScore(player){
+  var totalQuestions = player.results.length;
+    var correctAnswers = 0;
+    for (var i = 0; i < totalQuestions; i++) {
+      if (player.results[i].isCorrect == true) {
+        correctAnswers++;
+      }
+    }
+    return correctAnswers;
+}
+
+
+  // create a function to show frequency bar charts
+  function showFreq() {
+    // retrieve gender and percentage data from PlayerData[]
+    let genders = {};
+    let percentages = {};
+    for (let data of PlayersData) {
+      let gender = data.gender;
+      let percentage = Math.floor(data.score / data.total * 100);
+      if (!(gender in genders)) {
+        genders[gender] = 0;
+      }
+      if (!(percentage in percentages)) {
+        percentages[percentage] = 0;
+      }
+      genders[gender]++;
+      percentages[percentage]++;
+    }
+
+    // draw the gender frequency chart
+    let genderCanvas = document.getElementById("genderChart");
+    let genderCtx = genderCanvas.getContext("2d");
+    let genderWidth = genderCanvas.width;
+    let genderHeight = genderCanvas.height;
+    let total = genders["Male"] + genders["Female"];
+    let maleWidth = genderWidth * genders["Male"] / total;
+    let femaleWidth = genderWidth * genders["Female"] / total;
+    genderCtx.fillStyle = "blue";
+    genderCtx.fillRect(0, 0, maleWidth, genderHeight);
+    genderCtx.fillStyle = "pink";
+    genderCtx.fillRect(maleWidth, 0, femaleWidth, genderHeight);
+
+    // draw the percentage frequency chart
+    let percentageCanvas = document.getElementById("percentageChart");
+    let percentageCtx = percentageCanvas.getContext("2d");
+    let percentageWidth = percentageCanvas.width;
+    let percentageHeight = percentageCanvas.height;
+    let ranges = ["<50", "50-59", "60-69", "70-79", "80-89", "90-99", "100"];
+    let maxCount = Math.max(...Object.values(percentages));
+    let interval = percentageHeight / maxCount;
+    let barWidth = percentageWidth / ranges.length;
+    let x = 0;
+    for (let range of ranges) {
+      let count = percentages[range] || 0;
+      let barHeight = count * interval;
+      let y = percentageHeight - barHeight;
+      let color = "green";
+      if (range === "<50") {
+        color = "red";
+      } else if (range === "100") {
+        color = "gold";
+      }
+      percentageCtx.fillStyle = color;
+      percentageCtx.fillRect(x, y, barWidth, barHeight);
+      x += barWidth;
+    }
+  }
+
+
+  // call showfreq() every 5 seconds
+  setInterval(showFreq(), 5000);
+
+
+  
+  </script>
+  <style type="text/css">
+    .btn-disable
+        {
+        cursor: not-allowed;
+        pointer-events: none;
+
+        /*Button disabled - CSS color class*/
+        color: #c0c0c0;
+        background-color: #ffffff;
+
+        }
+</style>
+</body>
+</html>
